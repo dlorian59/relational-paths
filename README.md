@@ -8,6 +8,8 @@
 
 [**Usage guide: capabilities, examples and expected results →**](docs/0.3.0/en.md)
 
+[**Complete API, configuration and error reference →**](docs/0.3.0/reference.en.md)
+
 **Explainable JOIN paths from runtime relational metadata.**
 
 Build query editors, reporting tools, and metadata-driven APIs without spreading foreign-key navigation rules across application code. Describe logical table roles and their relationships once; request the roles needed by a query and inspect the resulting join plan.
@@ -176,6 +178,8 @@ Tests cover path ambiguity, positive-cost cycles, parallel foreign keys, determi
 **Java:** [17](docs/0.3.0/java.ru.md#java-17) · [21](docs/0.3.0/java.ru.md#java-21) · [25](docs/0.3.0/java.ru.md#java-25) · [27](docs/0.3.0/java.ru.md#java-27)
 
 [**Руководство: возможности, примеры и результаты →**](docs/0.3.0/ru.md)
+
+[**Полный справочник API, настроек и ошибок →**](docs/0.3.0/reference.ru.md)
 
 Стройте понятные и воспроизводимые планы JOIN по метаданным таблиц. Явно выбирайте неоднозначные связи и получайте SELECT-запросы с отдельными значениями параметров.
 
