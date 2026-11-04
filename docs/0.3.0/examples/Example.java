@@ -3,7 +3,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/** Runs the documentation examples without a database or runtime dependencies. */
+// Verify report planning and parameterized SQL without database access.
+// Проверяем планирование отчёта и параметризованный SQL без подключения к БД.
 public final class Example {
     private Example() { }
 
@@ -19,7 +20,8 @@ public final class Example {
     }
 
     private static Schema schemaExample() {
-        // snippet:schema
+        // Define allowed report roles, composite keys and semantic path costs.
+        // Задаём разрешённые роли отчёта, составные ключи и смысловую стоимость путей.
         Schema schema = new Schema(List.of(
             new Table("orders", "sales.orders",
                 Set.of("id", "customer_id", "tenant_id", "region_id")),
@@ -37,20 +39,19 @@ public final class Example {
         ));
         System.out.println(schema.tables().keySet());
         System.out.println(schema.relationship("order_customer").columns().size());
-        // end:schema
         require(schema.relationship("order_customer").columns().size() == 2, "Composite key lost");
         return schema;
     }
 
     private static JoinPlan planningExample(Schema schema) {
-        // snippet:planning
+        // Reuse the shared customer prefix and choose the cheaper region route.
+        // Переиспользуем общий путь через клиента и выбираем более дешёвый путь к региону.
         JoinPlan plan = new JoinPlanner(schema)
             .plan("orders", List.of("customer", "region"));
         System.out.println(plan.routes().get("region"));
         System.out.println(plan.aliases());
         System.out.println(plan.joins().size());
         System.out.println(plan.explain());
-        // end:planning
         require(plan.routes().get("region").equals(List.of("order_customer", "customer_region")), "Wrong weighted route");
         require(plan.joins().size() == 2, "Shared prefix duplicated");
         require(plan.aliases().get("region").equals("t2"), "Alias order changed");
@@ -58,7 +59,8 @@ public final class Example {
     }
 
     private static void ambiguityExample() {
-        // snippet:ambiguity
+        // Equal billing and shipping costs require an explicit business choice.
+        // Одинаковая стоимость платёжного адреса и доставки требует явного бизнес-выбора.
         Schema ambiguousSchema = new Schema(List.of(
             new Table("orders", "orders", Set.of("id", "billing_id", "shipping_id")),
             new Table("address", "address", Set.of("id", "city"))
@@ -79,12 +81,12 @@ public final class Example {
         JoinPlan shippingPlan = addressPlanner.plan("orders", List.of("address"),
             Map.of("address", List.of("shipping_ref")));
         System.out.println(shippingPlan.routes().get("address"));
-        // end:ambiguity
         require(shippingPlan.routes().get("address").equals(List.of("shipping_ref")), "Explicit choice ignored");
     }
 
     private static void rolesExample() {
-        // snippet:roles
+        // Separate logical roles give two aliases to one physical address table.
+        // Разные логические роли дают два алиаса одной физической таблице адресов.
         Schema addressRoles = new Schema(List.of(
             new Table("orders", "orders", Set.of("id", "billing_id", "shipping_id")),
             new Table("billing", "address", Set.of("id", "city")),
@@ -98,20 +100,19 @@ public final class Example {
         JoinPlan twoAddresses = new JoinPlanner(addressRoles)
             .plan("orders", List.of("shipping", "billing"));
         System.out.println(twoAddresses.aliases());
-        // end:roles
         require(twoAddresses.aliases().get("billing").equals("t1"), "Billing alias changed");
         require(twoAddresses.aliases().get("shipping").equals("t2"), "Shipping alias changed");
     }
 
     private static void renderingExample(JoinPlan plan) {
-        // snippet:rendering
+        // Keep user input in bindings so it cannot alter the SQL structure.
+        // Оставляем пользовательский ввод в параметрах, чтобы он не менял структуру SQL.
         BoundSql query = SqlRenderer.select(plan,
             List.of(new ColumnRef("orders", "id"), new ColumnRef("region", "name")),
             List.of(new Filter(new ColumnRef("customer", "name"),
                 Filter.Operator.EQ, "Alice' OR 1=1 --")));
         System.out.println(query.sql());
         System.out.println(query.bindings());
-        // end:rendering
         String expectedSql = "SELECT \"t0\".\"id\" AS \"c0\", \"t2\".\"name\" AS \"c1\" FROM \"sales\".\"orders\" AS \"t0\""
             + " INNER JOIN \"sales\".\"customer\" AS \"t1\" ON \"t0\".\"customer_id\" = \"t1\".\"id\""
             + " AND \"t0\".\"tenant_id\" = \"t1\".\"tenant_id\""
@@ -123,19 +124,20 @@ public final class Example {
     }
 
     private static void nullExample(JoinPlan plan) {
-        // snippet:nulls
+        // A null equality renders IS NULL and does not add a JDBC placeholder.
+        // Равенство null превращается в IS NULL и не добавляет параметр JDBC.
         BoundSql nullQuery = SqlRenderer.select(plan,
             List.of(new ColumnRef("customer", "id")),
             List.of(new Filter(new ColumnRef("customer", "name"), Filter.Operator.EQ, null)));
         System.out.println(nullQuery.sql().endsWith("WHERE \"t1\".\"name\" IS NULL"));
         System.out.println(nullQuery.bindings());
-        // end:nulls
         require(nullQuery.sql().endsWith("WHERE \"t1\".\"name\" IS NULL"), "Null comparison changed");
         require(nullQuery.bindings().isEmpty(), "Null predicate should not have a placeholder");
     }
 
     private static void boundariesExample(Schema schema, JoinPlan plan) {
-        // snippet:limits
+        // Exceeding a bound fails the request instead of returning a partial plan.
+        // Превышение лимита завершает запрос ошибкой, а не возвращает частичный план.
         try {
             new JoinPlanner(schema, new SearchLimits(10, 10, 0))
                 .plan("orders", List.of("customer"));
@@ -143,7 +145,6 @@ public final class Example {
         } catch (PlanningException error) {
             System.out.println(error.getMessage());
         }
-        // end:limits
         expect(IllegalArgumentException.class, () -> SqlRenderer.select(plan,
             List.of(new ColumnRef("customer", "undeclared")), List.of()));
         expect(IllegalArgumentException.class, () -> SqlRenderer.select(plan,

@@ -8,17 +8,25 @@
 
 Turn runtime table metadata into deterministic, explainable JOIN plans. Resolve ambiguous relationships explicitly and render SELECT queries with bound values.
 
+## Practical scenario: customer and shipping reports
+
+An order export needs customer names and delivery cities. Composite keys keep tenant
+relationships correct; explicit address routes prevent confusing billing with shipping.
+The [Spring guide](spring.en.md) connects the schema, starter configuration, annotated
+business code and expected result. The sections below explain the same core capabilities
+without requiring Spring or a live database.
+
 ## Capabilities at a glance
 
 | Capability | Use case | Example |
 | --- | --- | --- |
-| Install and run locally | For Java developers building query editors, reporting tools, or metadata-driven APIs. Start with JDK 17 or newer and a local build of version 0.3.0. | [Code and result](#install-and-run-locally) |
-| Describe roles and relationships | Declare the physical tables, their logical roles, and allowed columns. Relationships are directed and include every equality column required by the join. | [Code and result](#describe-roles-and-relationships) |
-| Plan weighted routes and inspect the result | Request every role needed by projections or filters. The planner chooses the unique minimum-cost route to each target and merges compatible shared prefixes. | [Code and result](#plan-weighted-routes-and-inspect-the-result) |
-| Choose ambiguous links and use table roles | Two equally cheap routes can represent different meanings. The planner reports the ambiguity instead of silently selecting billing or shipping. | [Code and result](#choose-ambiguous-links-and-use-table-roles) |
-| Render SELECT queries with bound values | SqlRenderer turns a validated plan into an INNER JOIN SELECT. Identifiers come from declared metadata; filter values remain separate from SQL text. | [Code and result](#render-select-queries-with-bound-values) |
-| Limits, failures, and guarantees | The planner fails explicitly when it cannot produce a valid answer. It never returns a partial route merely to fit a configured search limit. | [Code and result](#limits-failures-and-guarantees) |
-| Run the complete example and troubleshoot | Download Example.java and run it against the locally built JAR. It checks the documented routes, aliases, SQL, bindings, null behavior, limits, and immutable results without a database. | [Code and result](#run-the-complete-example-and-troubleshoot) |
+| Install and run locally | For Java developers building query editors, reporting tools, or metadata-driven APIs. Start with JDK 17 or newer and a local build of version 0.3.0. | [Code and result](#install-and-run-locally) · [Source](examples/Example.java) |
+| Describe roles and relationships | Declare the physical tables, their logical roles, and allowed columns. Relationships are directed and include every equality column required by the join. | [Code and result](#describe-roles-and-relationships) · [Source](examples/Example.java) |
+| Plan weighted routes and inspect the result | Request every role needed by projections or filters. The planner chooses the unique minimum-cost route to each target and merges compatible shared prefixes. | [Code and result](#plan-weighted-routes-and-inspect-the-result) · [Source](examples/Example.java) |
+| Choose ambiguous links and use table roles | Two equally cheap routes can represent different meanings. The planner reports the ambiguity instead of silently selecting billing or shipping. | [Code and result](#choose-ambiguous-links-and-use-table-roles) · [Source](examples/Example.java) |
+| Render SELECT queries with bound values | SqlRenderer turns a validated plan into an INNER JOIN SELECT. Identifiers come from declared metadata; filter values remain separate from SQL text. | [Code and result](#render-select-queries-with-bound-values) · [Source](examples/Example.java) |
+| Limits, failures, and guarantees | The planner fails explicitly when it cannot produce a valid answer. It never returns a partial route merely to fit a configured search limit. | [Code and result](#limits-failures-and-guarantees) · [Source](examples/Example.java) |
+| Run the complete example and troubleshoot | Run the included Example.java against the locally built library JAR from the checkout root. | [Code and result](#run-the-complete-example-and-troubleshoot) · [Source](examples/Example.java) |
 
 ## Install and run locally
 

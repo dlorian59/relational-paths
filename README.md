@@ -21,6 +21,12 @@ Build query editors, reporting tools, and metadata-driven APIs without spreading
 
 This is a semantic path planner, not a database cost optimizer. It never opens a connection or executes a query.
 
+## Spring Boot: an order report with explicit address selection
+
+[Practical integration](docs/0.3.0/spring.en.md): supply a `Schema` bean, configure search
+bounds and inject the planner into a report. The companion starter reuses the core;
+its runnable example selects shipping explicitly and keeps tenant/name values in bindings.
+
 ## Try it
 
 With a full JDK 17, 21, 25, or 27 installed:
@@ -172,6 +178,12 @@ Tests cover path ambiguity, positive-cost cycles, parallel foreign keys, determi
 [**Руководство: возможности, примеры и результаты →**](docs/0.3.0/ru.md)
 
 Стройте понятные и воспроизводимые планы JOIN по метаданным таблиц. Явно выбирайте неоднозначные связи и получайте SELECT-запросы с отдельными значениями параметров.
+
+## Spring Boot: отчёт с явным выбором адреса
+
+[Практическая интеграция](docs/0.3.0/spring.ru.md): предоставьте bean `Schema`, задайте
+лимиты и внедрите планировщик в отчёт. Отдельный стартер переиспользует основную библиотеку;
+запускаемый пример явно выбирает доставку и передаёт арендатора и имя параметрами.
 
 ## Попробовать
 
