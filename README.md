@@ -34,7 +34,7 @@ its runnable example selects shipping explicitly and keeps tenant/name values in
 With a full JDK 17, 21, 25, or 27 installed:
 
 ```sh
-git clone https://github.com/59Alex/relational-paths.git
+git clone https://github.com/dlorian59/relational-paths.git
 cd relational-paths
 ./gradlew example
 ```
@@ -195,7 +195,7 @@ Tests cover path ambiguity, positive-cost cycles, parallel foreign keys, determi
 библиотека строит план и SQL, а выполнение запроса остаётся приложению.
 
 ```sh
-git clone https://github.com/59Alex/relational-paths.git
+git clone https://github.com/dlorian59/relational-paths.git
 cd relational-paths
 ./gradlew example
 ```

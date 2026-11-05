@@ -37,12 +37,12 @@ publishing {
             pom {
                 name.set("relational-paths")
                 description.set("Explainable join paths from runtime relational metadata")
-                url.set("https://github.com/59Alex/relational-paths")
+                url.set("https://github.com/dlorian59/relational-paths")
                 licenses { license { name.set("MIT License"); url.set("https://opensource.org/licenses/MIT") } }
-                developers { developer { id.set("59Alex"); name.set("Aleksandr Kashevarov") } }
+                developers { developer { id.set("dlorian59"); name.set("Aleksandr Kashevarov") } }
                 scm {
-                    connection.set("scm:git:https://github.com/59Alex/relational-paths.git")
-                    url.set("https://github.com/59Alex/relational-paths")
+                    connection.set("scm:git:https://github.com/dlorian59/relational-paths.git")
+                    url.set("https://github.com/dlorian59/relational-paths")
                 }
             }
         }

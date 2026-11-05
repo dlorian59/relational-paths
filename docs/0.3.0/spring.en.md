@@ -13,7 +13,7 @@ chosen route and renders SQL with parameters; the host application executes it.
 
 ## Configure the application
 
-The companion [relational-paths-spring-boot-starter](https://github.com/59Alex/relational-paths-spring-boot-starter) 0.1.0 targets
+The companion [relational-paths-spring-boot-starter](https://github.com/dlorian59/relational-paths-spring-boot-starter) 0.1.0 targets
 Boot 4.1.2 and Java 17+. It installs an injectable `JoinPlanner` when the application
 supplies one `Schema` candidate, or a primary candidate among multiple schemas.
 No reflection or entity/database scanning is involved.
@@ -36,7 +36,7 @@ dependencies {
 ```
 
 Provide the approved metadata as a `Schema` bean, following
-[ReportConfiguration.java](https://github.com/59Alex/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/ReportConfiguration.java). It includes columns used
+[ReportConfiguration.java](https://github.com/dlorian59/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/ReportConfiguration.java). It includes columns used
 in projections, filters and composite joins. Set practical limits in application properties:
 
 ```properties
@@ -52,7 +52,7 @@ oversized schema fail startup; exceeding edge visits fails the planning call.
 
 ## Annotated source and business choice
 
-[OrderReport.java](https://github.com/59Alex/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/OrderReport.java) receives the planner through its constructor,
+[OrderReport.java](https://github.com/dlorian59/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/OrderReport.java) receives the planner through its constructor,
 selects `shipping_address` explicitly and retains the immutable plan for repeated requests.
 Its query method filters `orders.tenant_id` and `customer.name`; the tenant value must come
 from authenticated server context. Every example source comment is EN followed by RU.
@@ -64,7 +64,7 @@ var plan = planner.plan("orders", List.of("customer", "address"),
     Map.of("address", List.of("shipping_address")));
 ```
 
-The complete [ReportApplication.java](https://github.com/59Alex/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/ReportApplication.java) loads an actual Boot
+The complete [ReportApplication.java](https://github.com/dlorian59/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/ReportApplication.java) loads an actual Boot
 context using normal starter discovery, proves the automatic address choice is ambiguous,
 and requests the explicit report. No database is required.
 

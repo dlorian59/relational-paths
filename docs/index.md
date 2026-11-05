@@ -7,8 +7,8 @@ Choose a release and language. / Выберите версию библиоте�
 | Version / Версия | English | Русский | Java |
 | --- | --- | --- | --- |
 | **0.3.0** | [Usage guide](0.3.0/en.md) | [Руководство](0.3.0/ru.md) | [17 / 21 / 25 / 27 · EN](0.3.0/java.en.md), [RU](0.3.0/java.ru.md) |
-| 0.2.0 · archive / архив | [README at release](https://github.com/59Alex/relational-paths/blob/ca321294778db67c13101fcd1595b6076606f72f/README.md) | Архив исходного README доступен на английском | Minimum 27; superseded / заменён |
-| 0.1.0 · archive / архив | [README at release](https://github.com/59Alex/relational-paths/blob/053487dd9308c344b494b79cd2166bde63b044bf/README.md) | Архив исходного README доступен на английском | Minimum 17 |
+| 0.2.0 · archive / архив | [README at release](https://github.com/dlorian59/relational-paths/blob/ca321294778db67c13101fcd1595b6076606f72f/README.md) | Архив исходного README доступен на английском | Minimum 27; superseded / заменён |
+| 0.1.0 · archive / архив | [README at release](https://github.com/dlorian59/relational-paths/blob/053487dd9308c344b494b79cd2166bde63b044bf/README.md) | Архив исходного README доступен на английском | Minimum 17 |
 
 [Spring order report · EN](0.3.0/spring.en.md) · [Отчёт по заказам в Spring · RU](0.3.0/spring.ru.md)
 

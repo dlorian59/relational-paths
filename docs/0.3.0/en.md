@@ -38,7 +38,7 @@ For Java developers building query editors, reporting tools, or metadata-driven 
 - The library has an MIT license. It plans joins and renders SQL; it does not connect to a database.
 
 ```bash
-git clone https://github.com/59Alex/relational-paths.git
+git clone https://github.com/dlorian59/relational-paths.git
 cd relational-paths
 ./gradlew build publishToMavenLocal
 ```

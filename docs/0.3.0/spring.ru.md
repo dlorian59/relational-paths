@@ -13,7 +13,7 @@
 
 ## Настройка приложения
 
-Отдельный [relational-paths-spring-boot-starter](https://github.com/59Alex/relational-paths-spring-boot-starter) версии 0.1.0 рассчитан
+Отдельный [relational-paths-spring-boot-starter](https://github.com/dlorian59/relational-paths-spring-boot-starter) версии 0.1.0 рассчитан
 на Boot 4.1.2 и Java 17+. Он создаёт внедряемый `JoinPlanner`, когда приложение
 предоставляет один bean `Schema` либо основной кандидат среди нескольких схем.
 Рефлексии и сканирования сущностей или таблиц нет.
@@ -36,7 +36,7 @@ dependencies {
 ```
 
 Опишите разрешённые метаданные как bean `Schema` по примеру
-[ReportConfiguration.java](https://github.com/59Alex/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/ReportConfiguration.java). В нём объявлены колонки
+[ReportConfiguration.java](https://github.com/dlorian59/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/ReportConfiguration.java). В нём объявлены колонки
 для проекций, фильтров и составных JOIN. Задайте лимиты в application properties:
 
 ```properties
@@ -53,7 +53,7 @@ relational-paths.max-edge-visits=64
 
 ## Комментированный исходник и бизнес-выбор
 
-[OrderReport.java](https://github.com/59Alex/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/OrderReport.java) принимает планировщик через конструктор,
+[OrderReport.java](https://github.com/dlorian59/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/OrderReport.java) принимает планировщик через конструктор,
 явно выбирает `shipping_address` и сохраняет неизменяемый план для повторных запросов.
 Метод запроса фильтрует `orders.tenant_id` и `customer.name`; ID арендатора нужно получить
 из проверенного серверного контекста. Комментарии в примерах идут парами: EN, затем RU.
@@ -65,7 +65,7 @@ var plan = planner.plan("orders", List.of("customer", "address"),
     Map.of("address", List.of("shipping_address")));
 ```
 
-Полный [ReportApplication.java](https://github.com/59Alex/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/ReportApplication.java) создаёт настоящий
+Полный [ReportApplication.java](https://github.com/dlorian59/relational-paths-spring-boot-starter/blob/main/src/examples/java/example/reports/ReportApplication.java) создаёт настоящий
 контекст Boot со штатным обнаружением стартера, проверяет неоднозначность автоматического
 выбора адреса и получает отчёт с явным маршрутом. База данных не нужна.
 

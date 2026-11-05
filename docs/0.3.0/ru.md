@@ -38,7 +38,7 @@
 - Библиотека распространяется по лицензии MIT. Она строит соединения и формирует SQL, но сама не подключается к базе данных.
 
 ```bash
-git clone https://github.com/59Alex/relational-paths.git
+git clone https://github.com/dlorian59/relational-paths.git
 cd relational-paths
 ./gradlew build publishToMavenLocal
 ```
