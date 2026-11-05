@@ -1,5 +1,19 @@
 # 0.3.0 — отчёт по заказам в Spring
 
+## Существующее приложение: сервис и контроллер
+
+Стартер теперь также внедряет RelationalQueries поверх того же планировщика. Неизменяемый шаблон задаёт поля и маршрут доставки; каждый запрос добавляет значения арендатора и имени. Цели JOIN выводятся из полей и фильтров. Низкоуровневый пример ниже остаётся совместимым.
+
+```java
+var query = queries.from("orders")
+    .select("orders.id", "customer.name", "address.city")
+    .via("address", "shipping")
+    .whereEqual("orders.tenant_id", authenticatedTenantId)
+    .whereEqual("customer.name", customerName).build();
+```
+
+[Полный разбор Spring MVC/JDBC](https://github.com/dlorian59/relational-paths-spring-boot-starter/blob/main/docs/0.1.0/integration.ru.md) · [Source](https://github.com/dlorian59/relational-paths-spring-boot-starter/tree/main/examples/order-report).
+
 [← Руководство](ru.md) · [Версии](../index.md) · [README](../../README.md) · [English](spring.en.md)
 
 [Полный справочник API/настроек/ошибок](reference.ru.md)

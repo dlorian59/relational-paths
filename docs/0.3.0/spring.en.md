@@ -1,5 +1,19 @@
 # 0.3.0 — build a Spring order report
 
+## Existing application: service and controller
+
+The starter now also injects RelationalQueries over the same planner. Use an immutable template to select fields and the shipping route; add tenant/name values per request. JOIN targets are derived from fields and filters. The existing low-level example below remains supported.
+
+```java
+var query = queries.from("orders")
+    .select("orders.id", "customer.name", "address.city")
+    .via("address", "shipping")
+    .whereEqual("orders.tenant_id", authenticatedTenantId)
+    .whereEqual("customer.name", customerName).build();
+```
+
+[Full Spring MVC/JDBC walkthrough](https://github.com/dlorian59/relational-paths-spring-boot-starter/blob/main/docs/0.1.0/integration.en.md) · [Source](https://github.com/dlorian59/relational-paths-spring-boot-starter/tree/main/examples/order-report).
+
 [← Usage guide](en.md) · [Versions](../index.md) · [README](../../README.md) · [Русский](spring.ru.md)
 
 [Complete API/configuration/error reference](reference.en.md)

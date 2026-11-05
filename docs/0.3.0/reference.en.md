@@ -95,3 +95,13 @@ The [starter integration](spring.en.md) supplies plain beans; it does not wrap p
 Run `./gradlew test example` on an installed JDK 17+; the [full plain-Java example](examples/Example.java) has [compile/run instructions](en.md#run-the-complete-example-and-troubleshoot). Existing [planner tests](../../src/test/java/io/github/alex59/relationalpaths/JoinPlannerTest.java) include a small-graph exhaustive oracle and determinism checks. [Java/version matrix](java.en.md) separates artifact baseline from runtime versions; source and bytecode stay at 17.
 
 [← Usage guide](en.md)
+
+## Concise query facade
+
+Schema.builder supplies table(role, physicalName, columns...), relationship(id, from, to, [cost,] ColumnPair...) and build. Cost defaults to 1; build uses all existing Schema/Table/Relationship validation. The builder is mutable and local to metadata assembly.
+
+RelationalQueries(Schema) uses default bounds; RelationalQueries(JoinPlanner) preserves custom limits. from(root) returns an immutable Select. select(role.column...) appends projections; whereEqual(column, value) and where(column, operator, value) append AND filters; via(target, relationshipIds...) selects one explicit route. Each method returns a new instance. build infers targets from projections and filters, then delegates to the existing planner and renderer. Duplicate via targets fail. A via target absent from fields/filters fails. Column notation is exactly logicalRole.column, never physical schema.table.column or SQL.
+
+PlannedQuery exposes plan, statement (BoundSql), sql(), bindings() and explain(). There is no database execution or cancellation lifecycle. Mutable bound values remain caller-owned. Existing constructors, JoinPlanner and SqlRenderer remain compatible.
+
+[Integration / Интеграция](integration.en.md) · [README](../../README.md)

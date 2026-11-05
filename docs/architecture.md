@@ -97,3 +97,7 @@ SQL tests assert exact rendered syntax and ordered bindings. They do not claim a
 Metadata determines semantic routing. The planner enforces deterministic, bounded, unambiguous choices. The renderer isolates values from SQL syntax. The caller still owns authorization, join cardinality consequences, database execution, transactions, and operational limits.
 
 [← Back to documentation and versions / Назад к документации и версиям](index.md)
+
+## Concise application API
+
+Schema.Builder assembles the existing immutable metadata types. RelationalQueries.Select is an immutable request/template: it derives targets from projection/filter roles, then calls the same JoinPlanner and SqlRenderer. It neither changes Dijkstra/ambiguity rules nor bypasses identifier/column checks. PlannedQuery retains both explanation and bound SQL. No connection, scheduler, cache or second planning engine is introduced. Bound mutable values remain caller-owned.

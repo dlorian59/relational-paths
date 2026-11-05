@@ -8,6 +8,58 @@ public final class Schema {
     private final Map<String, Relationship> relationships;
     private final Map<String, List<Relationship>> outgoing;
 
+    /** Starts a metadata builder; only application-approved columns should be declared.
+     * @return a new mutable, non-thread-safe builder
+     */
+    public static Builder builder() { return new Builder(); }
+
+    /** Convenience assembly; build delegates all validation to the existing metadata types. */
+    public static final class Builder {
+        private final List<Table> tables = new ArrayList<>();
+        private final List<Relationship> relationships = new ArrayList<>();
+        private Builder() { }
+
+        /** Adds a logical role and its column allowlist.
+         * @param role logical role
+         * @param physicalName physical table or schema.table
+         * @param columns approved columns
+         * @return this builder
+         */
+        public Builder table(String role, String physicalName, String... columns) {
+            tables.add(new Table(role, physicalName, Set.of(columns)));
+            return this;
+        }
+
+        /** Adds a directed relationship with unit semantic cost.
+         * @param id relationship ID
+         * @param from source role
+         * @param to destination role
+         * @param columns equality pairs, including tenant keys where required
+         * @return this builder
+         */
+        public Builder relationship(String id, String from, String to, ColumnPair... columns) {
+            return relationship(id, from, to, 1, columns);
+        }
+
+        /** Adds a directed relationship with explicit semantic cost.
+         * @param id relationship ID
+         * @param from source role
+         * @param to destination role
+         * @param cost positive preference weight
+         * @param columns equality pairs
+         * @return this builder
+         */
+        public Builder relationship(String id, String from, String to, int cost, ColumnPair... columns) {
+            relationships.add(new Relationship(id, from, to, cost, List.of(columns)));
+            return this;
+        }
+
+        /** Validates and snapshots this metadata. Later additions do not change earlier schemas.
+         * @return immutable metadata
+         */
+        public Schema build() { return new Schema(tables, relationships); }
+    }
+
     /**
      * Creates a schema. IDs must be unique and every referenced column must be declared.
      * @param tables logical table roles

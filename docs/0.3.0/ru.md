@@ -1,5 +1,7 @@
 # relational-paths 0.3.0 — руководство
 
+[Existing application integration / Подключение к приложению](integration.ru.md)
+
 [← Back to documentation and versions / Назад к документации и версиям](../index.md)
 
 [Полный справочник API/настроек/ошибок](reference.ru.md)

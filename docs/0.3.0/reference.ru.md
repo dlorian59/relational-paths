@@ -95,3 +95,13 @@ PlanningException является IllegalArgumentException; AmbiguousPathExcept
 Запустите `./gradlew test example` на установленном JDK 17+; [полный обычный Java-пример](examples/Example.java) имеет [команды компиляции/запуска](ru.md#запуск-полного-примера-и-решение-проблем). Существующие [тесты планировщика](../../src/test/java/io/github/alex59/relationalpaths/JoinPlannerTest.java) включают сравнение с полным перебором небольших графов и проверки детерминизма. [Матрица Java/версий](java.ru.md) отделяет базу артефакта от runtime; исходники и байткод остаются на 17.
 
 [← Руководство](ru.md)
+
+## Краткий фасад запросов
+
+Schema.builder предоставляет table(role, physicalName, columns...), relationship(id, from, to, [cost,] ColumnPair...) и build. Стоимость по умолчанию 1; build сохраняет всю валидацию Schema/Table/Relationship. Builder изменяем и локален для сборки метаданных.
+
+RelationalQueries(Schema) использует стандартные лимиты; RelationalQueries(JoinPlanner) сохраняет пользовательские. from(root) возвращает неизменяемый Select. select(role.column...) добавляет проекции; whereEqual(column, value) и where(column, operator, value) добавляют AND-фильтры; via(target, relationshipIds...) выбирает явный маршрут. Каждый метод возвращает новый объект. build выводит цели из проекций/фильтров и делегирует существующим планировщику и рендереру. Повторный via одной цели вызывает ошибку. Цель via вне полей/фильтров также отклоняется. Синтаксис колонки — ровно logicalRole.column, без physical schema.table.column и SQL.
+
+PlannedQuery предоставляет plan, statement (BoundSql), sql(), bindings() и explain(). Выполнения БД и жизненного цикла отмены нет. Изменяемые значения параметров остаются ответственностью вызывающего кода. Существующие конструкторы, JoinPlanner и SqlRenderer совместимы.
+
+[Integration / Интеграция](integration.ru.md) · [README](../../README.md)

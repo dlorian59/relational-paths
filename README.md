@@ -3,280 +3,163 @@
 <details name="readme-language">
 <summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/lang-en-dark.svg"><img src="assets/lang-en-light.svg" width="42" height="26" alt="EN"></picture></summary>
 
-**Library version:** [0.3.0](docs/0.3.0/en.md) · [All versions](docs/index.md)<br>
-**Java:** [17](docs/0.3.0/java.en.md#java-17) · [21](docs/0.3.0/java.en.md#java-21) · [25](docs/0.3.0/java.en.md#java-25) · [27](docs/0.3.0/java.en.md#java-27)
+**0.3.0 · Java 17+ · MIT** · [EN/RU / Versions](docs/index.md) · [Java 17/21/25 + optional 27](docs/0.3.0/java.en.md)
 
-[**Usage guide: capabilities, examples and expected results →**](docs/0.3.0/en.md)
+Build report queries from the tables and relationships your application already knows. Describe approved columns once; select business fields and filters to get SQL with separate parameters and an explanation of every JOIN.
 
-[**Complete API, configuration and error reference →**](docs/0.3.0/reference.en.md)
+Useful for report APIs and query editors where different fields require different joins. When two routes have the same cost, the library asks for an explicit choice instead of returning the wrong business result.
 
-**Explainable JOIN paths from runtime relational metadata.**
+## Get started in your project
 
-Build query editors, reporting tools, and metadata-driven APIs without spreading foreign-key navigation rules across application code. Describe logical table roles and their relationships once; request the roles needed by a query and inspect the resulting join plan.
+Add the dependency to an existing Java 17+ project. These coordinates are not published to Maven Central yet; they resolve only when the artifact is supplied through your configured repository. Local artifact preparation is in CONTRIBUTING.
 
-- Finds minimum semantic-cost directed routes without enumerating every path combination.
-- Reports equal-cost alternatives instead of silently choosing one; accepts explicit relationship routes.
-- Preserves multiple foreign keys, composite keys, and separate roles for one physical table.
-- Produces deterministic plans, aliases, and route explanations.
-- Includes a small SQL renderer with column allowlists and bound filter values.
-- Java 17 minimum; supported LTS runtimes 17, 21, and 25, plus Java 27; no runtime dependencies, [MIT licensed](LICENSE).
-
-This is a semantic path planner, not a database cost optimizer. It never opens a connection or executes a query.
-
-## Spring Boot: an order report with explicit address selection
-
-[Practical integration](docs/0.3.0/spring.en.md): supply a `Schema` bean, configure search
-bounds and inject the planner into a report. The companion starter reuses the core;
-its runnable example selects shipping explicitly and keeps tenant/name values in bindings.
-
-## Try it
-
-With a full JDK 17, 21, 25, or 27 installed:
-
-```sh
-git clone https://github.com/dlorian59/relational-paths.git
-cd relational-paths
-./gradlew example
+Maven:
+```xml
+<dependency>
+  <groupId>io.github.59alex</groupId>
+  <artifactId>relational-paths</artifactId>
+  <version>0.3.0</version>
+</dependency>
 ```
 
-## Quick start
-
-The snippet below belongs in a method body after the imports. The complete runnable
-example is included in the repository and runs with the command above.
-
-```java
-import io.github.alex59.relationalpaths.*;
-import java.util.List;
-import java.util.Set;
-
-Schema schema = new Schema(List.of(
-    new Table("orders", "sales.orders",
-        Set.of("id", "customer_id", "tenant_id")),
-    new Table("customer", "sales.customer",
-        Set.of("id", "tenant_id", "name"))
-), List.of(
-    new Relationship("order_customer", "orders", "customer", 1, List.of(
-        new ColumnPair("customer_id", "id"),
-        new ColumnPair("tenant_id", "tenant_id")))
-));
-
-JoinPlan plan = new JoinPlanner(schema).plan("orders", List.of("customer"));
-System.out.println(plan.explain());
-
-BoundSql query = SqlRenderer.select(plan,
-    List.of(new ColumnRef("orders", "id"), new ColumnRef("customer", "name")),
-    List.of(new Filter(new ColumnRef("customer", "name"),
-        Filter.Operator.EQ, "Alice")));
-```
-
-The plan explains the actual relationship and equality predicates:
-
-```text
-ROOT orders AS t0
-order_customer: orders -> customer AS t1 cost=1 on orders.customer_id = customer.id AND orders.tenant_id = customer.tenant_id
-```
-
-`query.sql()` contains placeholders; `query.bindings()` contains `List.of("Alice")`:
-
-```sql
-SELECT "t0"."id" AS "c0", "t1"."name" AS "c1"
-FROM "sales"."orders" AS "t0"
-INNER JOIN "sales"."customer" AS "t1"
-  ON "t0"."customer_id" = "t1"."id"
- AND "t0"."tenant_id" = "t1"."tenant_id"
-WHERE "t1"."name" = ?
-```
-
-Execute with your own connection and transaction management:
-
-```java
-try (var statement = connection.prepareStatement(query.sql())) {
-    for (int i = 0; i < query.bindings().size(); i++) {
-        statement.setObject(i + 1, query.bindings().get(i));
-    }
-    try (var rows = statement.executeQuery()) {
-        while (rows.next()) {
-            System.out.println(rows.getObject("c0"));
-        }
-    }
-}
-```
-
-Use JDBC-compatible values and any driver-specific binding required by your database. Never interpolate the bindings into SQL. The renderer uses ANSI double-quoted identifiers and JDBC `?` placeholders; PostgreSQL accepts this syntax. Other dialects may need a custom renderer over `JoinPlan`.
-
-## Resolve ambiguity deliberately
-
-If two foreign keys lead from `orders` to `address` with the same cost, automatic planning throws `AmbiguousPathException`. Its `target()` and `candidates()` identify the ambiguous role and two witness routes. The list is intentionally not exhaustive.
-
-Choose a route by relationship IDs:
-
-```java
-JoinPlan plan = planner.plan("orders", List.of("address"),
-    java.util.Map.of("address", List.of("order_shipping_address")));
-```
-
-Explicit routes must start at the root, end at the named target, and visit each logical role at most once. A longer explicit route is allowed. To join both billing and shipping addresses, register two `Table` roles with different IDs and the same physical name, then give each role its own relationship. The plan assigns separate aliases.
-
-Routes for multiple targets share their common prefixes. Conflicting routes into the same role are rejected; the caller must choose consistent routes or introduce separate roles. The planner does not minimize the total cost of the resulting join tree across all targets.
-
-## Contracts and boundaries
-
-| Concern | Contract |
-|---|---|
-| Direction | Relationships are directed. Register a reverse edge explicitly when it is meaningful. |
-| Costs | Positive integers express semantic preference. Equal total cost is ambiguous even when hop counts differ. |
-| Determinism | Metadata and target input order do not change the plan. Projection and filter order are retained. |
-| Roles | One occurrence per logical role in a plan. Use distinct roles for self-joins and repeated physical tables. |
-| Search | Dijkstra with at most two witness paths per role; schema-size and edge-visit limits fail closed. |
-| SQL | INNER JOIN, composite equality, explicit projections, AND-connected EQ/NE/LT/LE/GT/GE comparisons. |
-| Nulls | EQ null renders IS NULL; NE null renders IS NOT NULL; ordered comparisons with null are rejected. |
-| Identifiers | ASCII identifiers only; physical names are table or schema.table. All columns must be declared. |
-| Concurrency | Metadata, planner, and plans are immutable and shareable. Bound values are retained by reference. |
-| Authorization | The application decides which metadata and columns a user may access. Validation is not row-level authorization. |
-
-Include roles required by filters as targets, as well as those needed for projections. An unjoined column is an error. INNER JOIN can exclude unmatched rows and multiply rows across to-many relations; the library does not infer cardinality, deduplicate results, or change join semantics to hide that behavior.
-
-Not included: schema introspection, outer joins, aggregation, subqueries, arbitrary SQL fragments, query execution, pagination, or a fluent ORM. `JoinPlan` is the extension point for another renderer.
-
-The defaults allow 512 roles, 8,192 relationships, and 8,192 edge visits per automatic search. Override them with `new JoinPlanner(schema, new SearchLimits(...))`. Search examines every reachable role, so a small target can still hit the configured limit on a large graph. Two witness paths bound ambiguity reporting; limits do not truncate a result.
-
-## Java baseline
-
-Version 0.3.0 targets Java 17 and supports the Java 17, 21, and 25 LTS runtimes, plus Java 27 as an additional runtime. Ordered, unmodifiable map snapshots preserve deterministic aliases and routes without requiring newer collection APIs. No preview features are used. See [Java support and migration](docs/JAVA-SUPPORT.md) for the runtime matrix and build commands.
-
-## Build and use locally
-
-Use a supported JDK (17, 21, 25, or 27); no preview flags are required:
-
-```sh
-./gradlew build
-./gradlew example
-./gradlew publishToMavenLocal
-```
-
-The build produces the library, source, and Javadoc JARs and runs [the executable report example](src/examples/java/io/github/alex59/relationalpaths/examples/ReportQuery.java). To use the locally published artifact:
-
+Gradle Kotlin:
 ```kotlin
-repositories { mavenLocal(); mavenCentral() }
 dependencies { implementation("io.github.59alex:relational-paths:0.3.0") }
 ```
 
-These are local installation instructions, not a claim that this version is available from Maven Central.
+Declare the metadata at application startup. The following fragments belong inside a method with imports from io.github.alex59.relationalpaths; the complete class is linked below.
 
-Tests cover path ambiguity, positive-cost cycles, parallel foreign keys, deterministic plans, explicit-route conflicts, multiple targets, hard limits, composite joins, aliases, nulls, and SQL parameter isolation. See [architecture and failure behavior](docs/architecture.md) for the design and its trade-offs.
+```java
+var schema = Schema.builder()
+    .table("orders", "sales.orders", "id", "customer_id", "tenant_id")
+    .table("customer", "sales.customer", "id", "name", "tenant_id")
+    .relationship("customer", "orders", "customer",
+        new ColumnPair("customer_id", "id"), new ColumnPair("tenant_id", "tenant_id"))
+    .build();
+var queries = new RelationalQueries(schema);
+```
 
-## License
+Build a query using the authenticated tenant from your server context:
 
-[MIT](LICENSE), copyright 2026 Aleksandr Kashevarov. The Gradle Wrapper retains its upstream Apache-2.0 notices; see [third-party notices](THIRD_PARTY_NOTICES.md).
+```java
+var query = queries.from("orders").select("orders.id", "customer.name")
+    .whereEqual("orders.tenant_id", authenticatedTenantId)
+    .whereEqual("customer.name", "Alice").build();
+```
+
+Result: a composite customer JOIN, tenant and name bound as [42, "Alice"], and column aliases c0/c1 in selection order. Pass query.sql() and query.bindings() to your JDBC layer; the library does not open connections.
+
+[Complete service source](docs/0.3.0/examples/OrderReport.java) · [Step-by-step walkthrough](docs/0.3.0/integration.en.md) · [Spring Boot](docs/0.3.0/spring.en.md)
+
+## Capabilities
+
+- **Join only the roles needed by fields and filters**
+  ```java
+  queries.from("orders").select("orders.id").whereEqual("customer.name", "Alice").build();
+  ```
+  The filter-only customer role is joined automatically. See the complete service above.
+- **Inspect why a JOIN was selected**
+  ```java
+  query.explain();
+  ```
+  Returns relationship IDs and equality pairs, including tenant keys.
+- **Choose the correct business route**
+  ```java
+  queries.from("orders").select("address.city").via("address", "shipping").build();
+  ```
+  For metadata with billing/shipping relationships, chooses shipping explicitly. The full address example is in the Spring guide.
+- **Bound metadata traversal**
+  ```java
+  var bounded = new RelationalQueries(new JoinPlanner(schema, SearchLimits.DEFAULT));
+  ```
+  Defaults allow 512 roles, 8192 relationships and 8192 edge visits. Hitting a limit throws; no partial plan is returned.
+
+## What remains in your application
+
+You own authorization, tenant policy, database execution, row limits and transactions. SQL is INNER JOIN with declared columns and AND comparisons, not an ORM or database optimizer. To-many joins can multiply rows; values must never be interpolated into SQL. Query templates are immutable, while bound mutable objects remain caller-owned.
+
+[Guide](docs/0.3.0/integration.en.md) · [API](docs/0.3.0/reference.en.md) · [CONTRIBUTING](CONTRIBUTING.md) · [MIT](LICENSE)
 
 </details>
 
 <details name="readme-language" open>
 <summary><picture><source media="(prefers-color-scheme: dark)" srcset="assets/lang-ru-dark.svg"><img src="assets/lang-ru-light.svg" width="42" height="26" alt="RU"></picture></summary>
 
-**Версия библиотеки:** [0.3.0](docs/0.3.0/ru.md) · [Все версии](docs/index.md)<br>
-**Java:** [17](docs/0.3.0/java.ru.md#java-17) · [21](docs/0.3.0/java.ru.md#java-21) · [25](docs/0.3.0/java.ru.md#java-25) · [27](docs/0.3.0/java.ru.md#java-27)
+**0.3.0 · Java 17+ · MIT** · [EN/RU / Versions](docs/index.md) · [Java 17/21/25 + optional 27](docs/0.3.0/java.ru.md)
 
-[**Руководство: возможности, примеры и результаты →**](docs/0.3.0/ru.md)
+Стройте запросы отчётов по таблицам и связям, которые уже известны приложению. Один раз опишите разрешённые колонки; затем выбирайте бизнес-поля и фильтры, чтобы получить SQL с отдельными параметрами и объяснением каждого JOIN.
 
-[**Полный справочник API, настроек и ошибок →**](docs/0.3.0/reference.ru.md)
+Подходит для API отчётов и редакторов запросов, где разным полям нужны разные соединения. Если два маршрута имеют одинаковую стоимость, библиотека требует явного выбора вместо неверного бизнес-результата.
 
-Стройте понятные и воспроизводимые планы JOIN по метаданным таблиц. Явно выбирайте неоднозначные связи и получайте SELECT-запросы с отдельными значениями параметров.
+## Подключение в свой проект
 
-## Spring Boot: отчёт с явным выбором адреса
+Добавьте зависимость в существующий проект Java 17+. Эти координаты пока не опубликованы в Maven Central: артефакт должен быть доступен через настроенный репозиторий. Подготовка локальных артефактов вынесена в CONTRIBUTING.
 
-[Практическая интеграция](docs/0.3.0/spring.ru.md): предоставьте bean `Schema`, задайте
-лимиты и внедрите планировщик в отчёт. Отдельный стартер переиспользует основную библиотеку;
-запускаемый пример явно выбирает доставку и передаёт арендатора и имя параметрами.
-
-## Попробовать
-
-Понадобится полный JDK 17, 21, 25 или 27. Для демонстрации база данных не нужна:
-библиотека строит план и SQL, а выполнение запроса остаётся приложению.
-
-```sh
-git clone https://github.com/dlorian59/relational-paths.git
-cd relational-paths
-./gradlew example
+Maven:
+```xml
+<dependency>
+  <groupId>io.github.59alex</groupId>
+  <artifactId>relational-paths</artifactId>
+  <version>0.3.0</version>
+</dependency>
 ```
 
-[Полный пример](src/examples/java/io/github/alex59/relationalpaths/examples/ReportQuery.java)
-показывает составной JOIN заказов и клиентов, SQL с `?` и отдельный параметр `Alice`.
-Минимальный фрагмент для тела метода после импортов:
-
-```java
-import io.github.alex59.relationalpaths.*;
-import java.util.List;
-import java.util.Set;
-
-var schema = new Schema(List.of(
-    new Table("orders", "orders", Set.of("id", "customer_id")),
-    new Table("customer", "customer", Set.of("id", "name"))
-), List.of(new Relationship("order_customer", "orders", "customer", 1,
-    List.of(new ColumnPair("customer_id", "id")))));
-var plan = new JoinPlanner(schema).plan("orders", List.of("customer"));
-var query = SqlRenderer.select(plan,
-    List.of(new ColumnRef("customer", "name")),
-    List.of(new Filter(new ColumnRef("customer", "name"), Filter.Operator.EQ, "Alice")));
-System.out.println(plan.routes().get("customer")); // [order_customer]
-System.out.println(query.bindings());             // [Alice]
-```
-
-## Что важно для интеграции
-
-- Планировщик ищет направленные пути с минимальной суммой положительных стоимостей.
-  Стоимость задаёт смысловое предпочтение, а не прогноз времени выполнения SQL.
-- При равной стоимости нескольких путей возникает `AmbiguousPathException` с двумя
-  маршрутами для объяснения. Явный список ID связей позволяет выбрать нужный путь.
-- Составные ключи и несколько внешних ключей сохраняются. Для двух обращений к одной
-  физической таблице задайте разные логические роли: каждая получит отдельный алиас.
-- Порядок метаданных не меняет план; общие участки путей переиспользуются, конфликтующие
-  входящие связи отклоняются. Лимиты поиска завершают операцию ошибкой, без усечения плана.
-- SQL-рендерер создаёт `INNER JOIN` и `AND`-фильтры. Колонки должны быть объявлены в
-  метаданных и включены в план; значения передаются отдельно через JDBC-параметры.
-  `EQ null` и `NE null` превращаются в `IS NULL` и `IS NOT NULL`.
-- Идентификаторы ограничены ASCII; физическое имя — `table` или `schema.table`.
-  Приложение отвечает за доступ к данным, транзакции и подключение к БД.
-- `INNER JOIN` может исключать строки и размножать их при связи один-ко-многим.
-  Планировщик не меняет эту семантику и не выполняет запросы самостоятельно.
-
-## Возможности
-
-| Возможность | Пример и объяснение |
-| --- | --- |
-| Подключение и локальная сборка | [Открыть](docs/0.3.0/ru.md#подключение-и-локальная-сборка) |
-| Описание ролей и связей | [Открыть](docs/0.3.0/ru.md#описание-ролей-и-связей) |
-| Планирование маршрутов и объяснение результата | [Открыть](docs/0.3.0/ru.md#планирование-маршрутов-и-объяснение-результата) |
-| Выбор неоднозначных связей и роли таблиц | [Открыть](docs/0.3.0/ru.md#выбор-неоднозначных-связей-и-роли-таблиц) |
-| Формирование SELECT с параметрами | [Открыть](docs/0.3.0/ru.md#формирование-select-с-параметрами) |
-| Лимиты, ошибки и гарантии | [Открыть](docs/0.3.0/ru.md#лимиты-ошибки-и-гарантии) |
-| Запуск полного примера и решение проблем | [Открыть](docs/0.3.0/ru.md#запуск-полного-примера-и-решение-проблем) |
-
-## Совместимость и установка
-
-Основной артефакт требует Java 17. Проверены JVM 17, 21, 25 и 27. Более новая JVM не повышает минимальную версию библиотеки.
-
-Специальных модулей с API Java 21/25/27 нет: библиотека использует базу Java 17.
-
-Установите артефакт из исходников в локальный Maven-репозиторий:
-
-```sh
-./gradlew build publishToMavenLocal
-```
-
-Подключите его в Gradle-проекте:
-
+Gradle Kotlin:
 ```kotlin
-repositories { mavenLocal(); mavenCentral() }
 dependencies { implementation("io.github.59alex:relational-paths:0.3.0") }
 ```
 
-Это локальная установка, а не публикация в Maven Central. Для выбора установленного
-JDK используйте `-PtestJavaVersion=17`, `21`, `25` или `27`; байткод всегда рассчитан
-на Java 17. Подробные сценарии с ожидаемым результатом доступны в таблице выше.
+Объявите метаданные при запуске приложения. Фрагменты ниже находятся внутри метода с импортами из io.github.alex59.relationalpaths; полная версия класса связана ниже.
 
-## Лицензия
+```java
+var schema = Schema.builder()
+    .table("orders", "sales.orders", "id", "customer_id", "tenant_id")
+    .table("customer", "sales.customer", "id", "name", "tenant_id")
+    .relationship("customer", "orders", "customer",
+        new ColumnPair("customer_id", "id"), new ColumnPair("tenant_id", "tenant_id"))
+    .build();
+var queries = new RelationalQueries(schema);
+```
 
-[MIT](LICENSE). Лицензии сторонних зависимостей сохраняются.
+Создайте запрос, передав арендатора из проверенного серверного контекста:
+
+```java
+var query = queries.from("orders").select("orders.id", "customer.name")
+    .whereEqual("orders.tenant_id", authenticatedTenantId)
+    .whereEqual("customer.name", "Alice").build();
+```
+
+Результат: составной JOIN клиента, арендатор и имя в параметрах [42, "Alice"], алиасы c0/c1 в порядке выбора. Передайте query.sql() и query.bindings() вашему JDBC-слою; библиотека не открывает соединения.
+
+[Полный исходник сервиса](docs/0.3.0/examples/OrderReport.java) · [Пошаговый разбор](docs/0.3.0/integration.ru.md) · [Spring Boot](docs/0.3.0/spring.ru.md)
+
+## Возможности
+
+- **Соединить роли, нужные полям и фильтрам**
+  ```java
+  queries.from("orders").select("orders.id").whereEqual("customer.name", "Alice").build();
+  ```
+  Роль customer, нужная только фильтру, добавляется автоматически. Полный сервис приведён выше.
+- **Понять причину выбора JOIN**
+  ```java
+  query.explain();
+  ```
+  Возвращает ID связей и пары равенств, включая ключ арендатора.
+- **Выбрать правильный бизнес-маршрут**
+  ```java
+  queries.from("orders").select("address.city").via("address", "shipping").build();
+  ```
+  Для схемы с платёжным адресом и доставкой явно выбирает shipping. Полный пример адресов — в руководстве Spring.
+- **Ограничить обход метаданных**
+  ```java
+  var bounded = new RelationalQueries(new JoinPlanner(schema, SearchLimits.DEFAULT));
+  ```
+  По умолчанию: 512 ролей, 8192 связи и 8192 просмотренных ребра. Превышение вызывает ошибку, частичный план не возвращается.
+
+## Что остаётся приложению
+
+Вы управляете авторизацией, правилами арендатора, выполнением SQL, лимитом строк и транзакциями. SQL использует INNER JOIN, объявленные колонки и AND-сравнения; это не ORM и не оптимизатор БД. Связи один-ко-многим могут размножать строки; не вставляйте значения в SQL. Шаблоны запросов неизменяемы, но изменяемые объекты параметров остаются ответственностью вызывающего кода.
+
+[Руководство](docs/0.3.0/integration.ru.md) · [API](docs/0.3.0/reference.ru.md) · [CONTRIBUTING](CONTRIBUTING.md) · [MIT](LICENSE)
 
 </details>
